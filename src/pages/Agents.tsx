@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AgentCard } from "@/components/AgentCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +66,7 @@ const mockAgents = [
 ];
 
 export default function Agents() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   
@@ -75,54 +77,14 @@ export default function Agents() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleViewDetails = async (id: string) => {
-    try {
-      // Example API call to fetch detailed agent information
-      const response = await fetch(`/api/agents/${id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}` // if auth is needed
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const agentDetails = await response.json();
-      
-      // Example of expected response structure:
-      // {
-      //   id: "1",
-      //   name: "RAN-Agent-001",
-      //   version: "2.1.3",
-      //   status: "active",
-      //   uptime: "15d 8h 32m",
-      //   lastSeen: "2 min ago",
-      //   location: "Stockholm DC - Rack A12",
-      //   detailedMetrics: {
-      //     cpuUsage: "45%",
-      //     memoryUsage: "2.1GB",
-      //     networkLatency: "12ms",
-      //     errorRate: "0.01%"
-      //   },
-      //   logs: [...],
-      //   configuration: {...}
-      // }
-      
-      console.log("Agent details:", agentDetails);
-      // Here you would typically navigate to a details page or open a modal
-      // For example: navigate(`/agents/${id}/details`);
-      
-    } catch (error) {
-      console.error("Failed to fetch agent details:", error);
-      // Handle error (show toast, etc.)
-    }
+  const handleViewDetails = (id: string) => {
+    // Navigate to agent chat interface
+    navigate(`/agents/${id}/chat`);
   };
 
   const handleManageAgent = (id: string) => {
-    console.log("Manage agent:", id);
+    // Navigate to agent configuration page
+    navigate(`/agents/${id}/config`);
   };
 
   const statusCounts = {

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,6 +77,7 @@ const knowledgeArticles = [
 ];
 
 export default function Knowledge() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -239,7 +241,11 @@ export default function Knowledge() {
               </div>
               
               <div className="flex gap-2 pt-2">
-                <Button size="sm" className="flex-1 bg-primary hover:bg-primary/90">
+                <Button 
+                  size="sm" 
+                  className="flex-1 bg-primary hover:bg-primary/90"
+                  onClick={() => navigate(`/knowledge/${article.id}`)}
+                >
                   <FileText className="w-4 h-4 mr-1" />
                   Read
                 </Button>
