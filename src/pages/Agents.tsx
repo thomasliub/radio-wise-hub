@@ -75,8 +75,50 @@ export default function Agents() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleViewDetails = (id: string) => {
-    console.log("View details for agent:", id);
+  const handleViewDetails = async (id: string) => {
+    try {
+      // Example API call to fetch detailed agent information
+      const response = await fetch(`/api/agents/${id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}` // if auth is needed
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const agentDetails = await response.json();
+      
+      // Example of expected response structure:
+      // {
+      //   id: "1",
+      //   name: "RAN-Agent-001",
+      //   version: "2.1.3",
+      //   status: "active",
+      //   uptime: "15d 8h 32m",
+      //   lastSeen: "2 min ago",
+      //   location: "Stockholm DC - Rack A12",
+      //   detailedMetrics: {
+      //     cpuUsage: "45%",
+      //     memoryUsage: "2.1GB",
+      //     networkLatency: "12ms",
+      //     errorRate: "0.01%"
+      //   },
+      //   logs: [...],
+      //   configuration: {...}
+      // }
+      
+      console.log("Agent details:", agentDetails);
+      // Here you would typically navigate to a details page or open a modal
+      // For example: navigate(`/agents/${id}/details`);
+      
+    } catch (error) {
+      console.error("Failed to fetch agent details:", error);
+      // Handle error (show toast, etc.)
+    }
   };
 
   const handleManageAgent = (id: string) => {
@@ -107,13 +149,34 @@ export default function Agents() {
 
       {/* Status Summary */}
       <div className="flex flex-wrap gap-4">
-        <Badge className="bg-success text-success-foreground px-4 py-2 text-sm">
+        <Badge 
+          className={`px-4 py-2 text-sm cursor-pointer transition-all hover:scale-105 ${
+            statusFilter === "active" 
+              ? "bg-success text-success-foreground ring-2 ring-success/50" 
+              : "bg-success/20 text-success hover:bg-success/30"
+          }`}
+          onClick={() => setStatusFilter(statusFilter === "active" ? "all" : "active")}
+        >
           {statusCounts.active} Active
         </Badge>
-        <Badge className="bg-destructive text-destructive-foreground px-4 py-2 text-sm">
+        <Badge 
+          className={`px-4 py-2 text-sm cursor-pointer transition-all hover:scale-105 ${
+            statusFilter === "inactive" 
+              ? "bg-destructive text-destructive-foreground ring-2 ring-destructive/50" 
+              : "bg-destructive/20 text-destructive hover:bg-destructive/30"
+          }`}
+          onClick={() => setStatusFilter(statusFilter === "inactive" ? "all" : "inactive")}
+        >
           {statusCounts.inactive} Inactive  
         </Badge>
-        <Badge className="bg-warning text-warning-foreground px-4 py-2 text-sm">
+        <Badge 
+          className={`px-4 py-2 text-sm cursor-pointer transition-all hover:scale-105 ${
+            statusFilter === "maintenance" 
+              ? "bg-warning text-warning-foreground ring-2 ring-warning/50" 
+              : "bg-warning/20 text-warning hover:bg-warning/30"
+          }`}
+          onClick={() => setStatusFilter(statusFilter === "maintenance" ? "all" : "maintenance")}
+        >
           {statusCounts.maintenance} In Maintenance
         </Badge>
       </div>
