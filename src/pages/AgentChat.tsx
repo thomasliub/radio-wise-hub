@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { LangflowClient } from "@datastax/langflow-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,7 @@ export default function AgentChat() {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [agent, setAgent] = useState<Agent | null>(null);
+  const [langflowClient, setLangflowClient] = useState<LangflowClient | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -46,6 +48,13 @@ export default function AgentChat() {
   }, [messages]);
 
   useEffect(() => {
+    // Initialize Langflow client
+    const client = new LangflowClient({
+      baseUrl: "http://localhost:7860", // Replace with your Langflow server URL
+      apiKey: "your-api-key" // Replace with your API key if required
+    });
+    setLangflowClient(client);
+
     // Simulate fetching agent info
     setAgent({
       id: id || '1',
@@ -70,50 +79,28 @@ export default function AgentChat() {
     setIsLoading(true);
 
     try {
-      // Example Langflow API call
-      const response = await fetch('/api/langflow/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        },
-        body: JSON.stringify({
-          flow_id: 'your-flow-id', // Replace with actual flow ID
-          agent_id: id,
-          message: inputMessage,
-          session_id: `agent-${id}-session`, // Maintain conversation context
-          tweaks: {
-            // Any flow-specific parameters
-            agent_context: agent?.name,
-            agent_location: agent?.location
-          }
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!langflowClient) {
+        throw new Error("Langflow client not initialized");
       }
 
-      const data = await response.json();
+      // Use Langflow client to run the flow
+      const flowId = 'your-flow-id'; // Replace with actual flow ID
+      const flow = langflowClient.flow(flowId);
       
-      // Expected Langflow response structure:
-      // {
-      //   "outputs": [
-      //     {
-      //       "outputs": [
-      //         {
-      //           "results": {
-      //             "message": {
-      //               "text": "Agent response here..."
-      //             }
-      //           }
-      //         }
-      //       ]
-      //     }
-      //   ]
-      // }
+      // Run the flow with the user's message
+      const response = await flow.run(inputMessage, {
+        // Optional: Session ID to maintain conversation context
+        session_id: `agent-${id}-session`,
+        // Optional: Tweaks/configuration for the flow
+        tweaks: {
+          agent_context: agent?.name,
+          agent_location: agent?.location,
+          agent_id: id
+        }
+      });
 
-      const agentResponse = data.outputs?.[0]?.outputs?.[0]?.results?.message?.text || 
+      // Extract the response text from Langflow response
+      const agentResponse = response.chatOutputText() || 
                           "I'm sorry, I couldn't process your request right now.";
 
       const agentMessage: Message = {
