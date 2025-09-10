@@ -54,8 +54,7 @@ export function AppSidebar() {
         </div>
 
         <SidebarGroup className="px-2 py-4">
-          <SidebarGroupLabel className={isCollapsed ? "hidden" : ""}>
-        </SidebarGroupLabel>
+          <SidebarGroupLabel className={isCollapsed ? "hidden" : ""}></SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map(item => <SidebarMenuItem key={item.title}>
