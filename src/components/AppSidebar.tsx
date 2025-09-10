@@ -47,7 +47,7 @@ export function AppSidebar() {
                 <Server className="w-5 h-5 text-primary-foreground" />
               </div>
               <div>
-                <h2 className="font-semibold text-sm text-emerald-400">Ericsson Agent Portal</h2>
+                <h2 className="font-semibold text-sm text-emerald-400">Radio SW AI Platform</h2>
                 <p className="text-xs text-gray-200">Radio SW Agents & Knowledge Base</p>
               </div>
             </div>}

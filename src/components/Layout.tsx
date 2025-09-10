@@ -1,13 +1,12 @@
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-
 interface LayoutProps {
   children: React.ReactNode;
 }
-
-export function Layout({ children }: LayoutProps) {
-  return (
-    <SidebarProvider>
+export function Layout({
+  children
+}: LayoutProps) {
+  return <SidebarProvider>
       <div className="flex min-h-screen w-full bg-gradient-subtle">
         <AppSidebar />
         <SidebarInset className="flex-1">
@@ -15,7 +14,7 @@ export function Layout({ children }: LayoutProps) {
             <div className="flex items-center gap-4">
               <SidebarTrigger className="h-8 w-8" />
               <div>
-                <h1 className="text-lg font-semibold text-foreground">Ericsson Radio SW Portal</h1>
+                <h1 className="text-lg font-semibold text-foreground">Radio SW AI Platform</h1>
                 <p className="text-sm text-muted-foreground">Agent Management & Knowledge Base</p>
               </div>
             </div>
@@ -33,6 +32,5 @@ export function Layout({ children }: LayoutProps) {
           </main>
         </SidebarInset>
       </div>
-    </SidebarProvider>
-  );
+    </SidebarProvider>;
 }
