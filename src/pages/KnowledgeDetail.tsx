@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -286,9 +288,30 @@ For additional support, contact the Radio SW team or consult the advanced config
             <CardContent>
               <ScrollArea className="h-[600px] pr-4">
                 <div className="prose prose-gray dark:prose-invert max-w-none">
-                  <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      p: ({ children }) => <p className="mb-4 leading-relaxed">{children}</p>,
+                      h1: ({ children }) => <h1 className="text-2xl font-bold mb-4 text-foreground">{children}</h1>,
+                      h2: ({ children }) => <h2 className="text-xl font-semibold mb-3 text-foreground">{children}</h2>,
+                      h3: ({ children }) => <h3 className="text-lg font-semibold mb-2 text-foreground">{children}</h3>,
+                      h4: ({ children }) => <h4 className="text-base font-semibold mb-2 text-foreground">{children}</h4>,
+                      ul: ({ children }) => <ul className="list-disc pl-6 mb-4 space-y-1">{children}</ul>,
+                      ol: ({ children }) => <ol className="list-decimal pl-6 mb-4 space-y-1">{children}</ol>,
+                      li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                      code: ({ children }) => <code className="bg-muted px-2 py-1 rounded text-sm font-mono">{children}</code>,
+                      pre: ({ children }) => <pre className="bg-muted p-4 rounded-lg overflow-x-auto mb-4 text-sm font-mono">{children}</pre>,
+                      blockquote: ({ children }) => <blockquote className="border-l-4 border-primary pl-4 italic my-4 text-muted-foreground">{children}</blockquote>,
+                      a: ({ children, href }) => <a href={href} className="text-primary underline hover:text-primary/80 transition-colors" target="_blank" rel="noopener noreferrer">{children}</a>,
+                      table: ({ children }) => <table className="w-full border-collapse border border-border mb-4">{children}</table>,
+                      th: ({ children }) => <th className="border border-border p-2 bg-muted font-semibold text-left">{children}</th>,
+                      td: ({ children }) => <td className="border border-border p-2">{children}</td>,
+                      img: ({ src, alt }) => <img src={src} alt={alt} className="max-w-full h-auto rounded-lg my-4" />,
+                      hr: () => <hr className="border-border my-6" />
+                    }}
+                  >
                     {article.content}
-                  </pre>
+                  </ReactMarkdown>
                 </div>
               </ScrollArea>
             </CardContent>
