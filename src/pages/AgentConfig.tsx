@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Save, RotateCcw, Settings, Network, Shield, Activity } from "lucide-react";
+import { ArrowLeft, Save, RotateCcw, Settings, Network, Shield, Activity, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface AgentConfig {
   id: string;
@@ -52,6 +53,7 @@ export default function AgentConfig() {
   const [config, setConfig] = useState<AgentConfig | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     // Simulate fetching agent configuration
@@ -181,6 +183,41 @@ export default function AgentConfig() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!config) return;
+    
+    setIsDeleting(true);
+    try {
+      // Example API call to delete agent
+      const response = await fetch(`/api/agents/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      toast({
+        title: "Agent Deleted",
+        description: "The agent has been successfully deleted.",
+      });
+      
+      navigate("/agents");
+    } catch (error) {
+      console.error("Failed to delete agent:", error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete agent. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!config) {
     return <div className="flex items-center justify-center h-96">Loading configuration...</div>;
   }
@@ -218,6 +255,36 @@ export default function AgentConfig() {
         </div>
         
         <div className="flex gap-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="destructive" 
+                size="sm"
+                disabled={isDeleting}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Agent
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Agent</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete "{config.name}"? This action cannot be undone and will permanently remove the agent and all its configuration.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handleDelete}
+                  className="bg-destructive hover:bg-destructive/90"
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete Agent'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          
           <Button 
             variant="outline" 
             onClick={handleReset}

@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Clock, User, Calendar, Download, Share, Bookmark } from "lucide-react";
+import { ArrowLeft, Clock, User, Calendar, Download, Share, Bookmark, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface KnowledgeArticle {
   id: string;
@@ -29,8 +31,10 @@ interface KnowledgeArticle {
 export default function KnowledgeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [article, setArticle] = useState<KnowledgeArticle | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -197,6 +201,41 @@ For additional support, contact the Radio SW team or consult the advanced config
     console.log("Bookmark article:", id);
   };
 
+  const handleDelete = async () => {
+    if (!article) return;
+    
+    setIsDeleting(true);
+    try {
+      // Example API call to delete knowledge article
+      const response = await fetch(`/api/knowledge/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      toast({
+        title: "Knowledge Article Deleted",
+        description: "The knowledge article has been successfully deleted.",
+      });
+      
+      navigate("/knowledge");
+    } catch (error) {
+      console.error("Failed to delete knowledge article:", error);
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete knowledge article. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-96">Loading article...</div>;
   }
@@ -230,6 +269,36 @@ For additional support, contact the Radio SW team or consult the advanced config
         </Button>
         
         <div className="flex gap-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="destructive" 
+                size="sm"
+                disabled={isDeleting}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Knowledge Article</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete "{article?.title}"? This action cannot be undone and will permanently remove the article.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handleDelete}
+                  className="bg-destructive hover:bg-destructive/90"
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete Article'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          
           <Button variant="outline" size="sm" onClick={handleBookmark}>
             <Bookmark className="w-4 h-4 mr-2" />
             Bookmark

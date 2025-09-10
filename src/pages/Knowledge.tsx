@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, BookOpen, FileText, Video, Download, ExternalLink } from "lucide-react";
+import { Search, BookOpen, FileText, Video, Download, ExternalLink, Settings } from "lucide-react";
 
 const knowledgeArticles = [
   {
@@ -248,6 +248,14 @@ export default function Knowledge() {
                 >
                   <FileText className="w-4 h-4 mr-1" />
                   Read
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate(`/knowledge/${article.id}`)}
+                >
+                  <Settings className="w-4 h-4 mr-1" />
+                  Manage
                 </Button>
                 <Button variant="outline" size="sm">
                   <ExternalLink className="w-4 h-4" />
