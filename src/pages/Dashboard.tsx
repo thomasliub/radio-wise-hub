@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { DashboardStats } from "@/components/DashboardStats";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const recentAgents = [
     { id: "1", name: "RAN-Agent-001", status: "active", location: "Stockholm DC" },
     { id: "2", name: "RAN-Agent-002", status: "maintenance", location: "Helsinki DC" },
@@ -110,21 +112,32 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button className="h-auto p-4 flex-col gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button 
+              className="h-auto p-4 flex-col gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+              onClick={() => navigate("/deploy-agent")}
+            >
               <Server className="w-6 h-6" />
               <div className="text-center">
                 <p className="font-medium">Deploy Agent</p>
                 <p className="text-xs opacity-90">Add new SW agent</p>
               </div>
             </Button>
-            <Button variant="outline" className="h-auto p-4 flex-col gap-2 border-primary text-primary hover:bg-primary/5">
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 flex-col gap-2 border-primary text-primary hover:bg-primary/5"
+              onClick={() => navigate("/deploy-knowledge")}
+            >
               <BookOpen className="w-6 h-6" />
               <div className="text-center">
-                <p className="font-medium">Browse Knowledge</p>
-                <p className="text-xs">Search documentation</p>
+                <p className="font-medium">Deploy Knowledge</p>
+                <p className="text-xs">Add documentation</p>
               </div>
             </Button>
-            <Button variant="outline" className="h-auto p-4 flex-col gap-2 border-primary text-primary hover:bg-primary/5">
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 flex-col gap-2 border-primary text-primary hover:bg-primary/5"
+              onClick={() => navigate("/view-agent-data")}
+            >
               <Database className="w-6 h-6" />
               <div className="text-center">
                 <p className="font-medium">View Agent Data</p>
