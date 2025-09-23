@@ -10,7 +10,7 @@ import { Search, Plus, Filter } from "lucide-react";
 // Mock data for agents
 const mockAgents = [{
   id: "1",
-  name: "RAN-Agent-001",
+  name: "RAN-Agent-000",
   version: "2.1.3",
   status: "active" as const,
   uptime: "15d 8h 32m",
