@@ -4,45 +4,34 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Save, RotateCcw, Settings, Network, Shield, Activity, Trash2 } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ArrowLeft, Save, RotateCcw, Settings, Trash2, Bot, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface AgentConfig {
   id: string;
   name: string;
-  version: string;
+  description: string;
   status: "active" | "inactive" | "maintenance";
-  location: string;
-  configuration: {
-    general: {
-      autoStart: boolean;
-      logLevel: string;
-      heartbeatInterval: number;
-      maxRetries: number;
-    };
-    network: {
-      port: number;
-      protocol: string;
-      timeout: number;
-      compression: boolean;
-    };
-    security: {
-      encryption: boolean;
-      authRequired: boolean;
-      sslEnabled: boolean;
-      certificatePath: string;
-    };
-    monitoring: {
-      metricsEnabled: boolean;
-      loggingEnabled: boolean;
-      alertThreshold: number;
-      reportingInterval: number;
-    };
+  owner: string;
+  accessRoles: string[];
+  lastUpdated: string;
+  agentType: "langflow" | "custom";
+  langflowConfig?: {
+    flowId: string;
+    apiKey: string;
+    baseUrl: string;
+    maxTokens?: number;
+    streamMode?: boolean;
+    temperature?: number;
+  };
+  customConfig?: {
+    iframeUrl: string;
   };
 }
 
@@ -59,51 +48,77 @@ export default function AgentConfig() {
     // Simulate fetching agent configuration
     setConfig({
       id: id || '1',
-      name: `RAN-Agent-${id?.padStart(3, '0')}`,
-      version: '2.1.3',
+      name: `AI Agent ${id?.padStart(3, '0')}`,
+      description: 'A powerful AI agent for automated tasks and intelligent assistance.',
       status: 'active',
-      location: 'Stockholm DC - Rack A12',
-      configuration: {
-        general: {
-          autoStart: true,
-          logLevel: 'INFO',
-          heartbeatInterval: 30,
-          maxRetries: 3
-        },
-        network: {
-          port: 8080,
-          protocol: 'HTTPS',
-          timeout: 5000,
-          compression: true
-        },
-        security: {
-          encryption: true,
-          authRequired: true,
-          sslEnabled: true,
-          certificatePath: '/etc/ssl/certs/agent.crt'
-        },
-        monitoring: {
-          metricsEnabled: true,
-          loggingEnabled: true,
-          alertThreshold: 90,
-          reportingInterval: 60
-        }
+      owner: 'John Doe',
+      accessRoles: ['admin', 'user'],
+      lastUpdated: new Date().toISOString(),
+      agentType: 'langflow',
+      langflowConfig: {
+        flowId: 'flow-12345',
+        apiKey: '',
+        baseUrl: 'https://api.langflow.example.com',
+        maxTokens: 2048,
+        streamMode: true,
+        temperature: 0.7
       }
     });
   }, [id]);
 
-  const updateConfig = (section: keyof AgentConfig['configuration'], key: string, value: any) => {
+  const updateBasicConfig = (key: keyof AgentConfig, value: any) => {
     if (!config) return;
     
     setConfig(prev => ({
       ...prev!,
-      configuration: {
-        ...prev!.configuration,
-        [section]: {
-          ...prev!.configuration[section],
-          [key]: value
-        }
+      [key]: value
+    }));
+    setHasChanges(true);
+  };
+
+  const updateLangflowConfig = (key: string, value: any) => {
+    if (!config || !config.langflowConfig) return;
+    
+    setConfig(prev => ({
+      ...prev!,
+      langflowConfig: {
+        ...prev!.langflowConfig!,
+        [key]: value
       }
+    }));
+    setHasChanges(true);
+  };
+
+  const updateCustomConfig = (key: string, value: any) => {
+    if (!config) return;
+    
+    setConfig(prev => ({
+      ...prev!,
+      customConfig: {
+        ...prev!.customConfig,
+        [key]: value
+      }
+    }));
+    setHasChanges(true);
+  };
+
+  const handleAgentTypeChange = (newType: "langflow" | "custom") => {
+    if (!config) return;
+    
+    setConfig(prev => ({
+      ...prev!,
+      agentType: newType,
+      langflowConfig: newType === 'langflow' ? (prev!.langflowConfig || {
+        flowId: '',
+        apiKey: '',
+        baseUrl: '',
+        maxTokens: 2048,
+        streamMode: false,
+        temperature: 0.7
+      }) : undefined,
+      customConfig: newType === 'custom' ? (prev!.customConfig || {
+        iframeUrl: ''
+      }) : undefined
     }));
     setHasChanges(true);
   };
@@ -121,7 +136,8 @@ export default function AgentConfig() {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         },
         body: JSON.stringify({
-          configuration: config.configuration
+          ...config,
+          lastUpdated: new Date().toISOString()
         })
       });
 
@@ -151,32 +167,21 @@ export default function AgentConfig() {
     // Reset to original values - in real app, would fetch from server
     if (config) {
       setConfig({
-        ...config,
-        configuration: {
-          general: {
-            autoStart: true,
-            logLevel: 'INFO',
-            heartbeatInterval: 30,
-            maxRetries: 3
-          },
-          network: {
-            port: 8080,
-            protocol: 'HTTPS',
-            timeout: 5000,
-            compression: true
-          },
-          security: {
-            encryption: true,
-            authRequired: true,
-            sslEnabled: true,
-            certificatePath: '/etc/ssl/certs/agent.crt'
-          },
-          monitoring: {
-            metricsEnabled: true,
-            loggingEnabled: true,
-            alertThreshold: 90,
-            reportingInterval: 60
-          }
+        id: id || '1',
+        name: `AI Agent ${id?.padStart(3, '0')}`,
+        description: 'A powerful AI agent for automated tasks and intelligent assistance.',
+        status: 'active',
+        owner: 'John Doe',
+        accessRoles: ['admin', 'user'],
+        lastUpdated: new Date().toISOString(),
+        agentType: 'langflow',
+        langflowConfig: {
+          flowId: 'flow-12345',
+          apiKey: '',
+          baseUrl: 'https://api.langflow.example.com',
+          maxTokens: 2048,
+          streamMode: true,
+          temperature: 0.7
         }
       });
       setHasChanges(false);
@@ -242,13 +247,12 @@ export default function AgentConfig() {
             <div>
               <h1 className="text-2xl font-bold text-foreground">{config.name} Configuration</h1>
               <div className="flex items-center gap-2">
-                <Badge className="bg-success text-success-foreground">
-                  <Activity className="w-3 h-3 mr-1" />
-                  {config.status}
-                </Badge>
-                <span className="text-sm text-muted-foreground">v{config.version}</span>
-                <span className="text-sm text-muted-foreground">•</span>
-                <span className="text-sm text-muted-foreground">{config.location}</span>
+            <Badge variant={config.status === 'active' ? 'default' : config.status === 'inactive' ? 'secondary' : 'destructive'}>
+              {config.status.charAt(0).toUpperCase() + config.status.slice(1)}
+            </Badge>
+            <span className="text-sm text-muted-foreground">Owner: {config.owner}</span>
+            <span className="text-sm text-muted-foreground">•</span>
+            <span className="text-sm text-muted-foreground">Updated: {new Date(config.lastUpdated).toLocaleDateString()}</span>
               </div>
             </div>
           </div>
@@ -303,253 +307,211 @@ export default function AgentConfig() {
         </div>
       </div>
 
-      {/* Configuration Tabs */}
-      <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="network">Network</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="general">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                General Configuration
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label>Auto Start</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Automatically start agent on system boot
-                  </p>
-                </div>
-                <Switch
-                  checked={config.configuration.general.autoStart}
-                  onCheckedChange={(value) => updateConfig('general', 'autoStart', value)}
+      {/* Configuration */}
+      <div className="grid gap-6">
+        {/* Basic Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              Basic Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input
+                  id="name"
+                  value={config.name}
+                  onChange={(e) => updateBasicConfig('name', e.target.value)}
+                  placeholder="Enter agent name"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label>Log Level</Label>
+                <Label htmlFor="owner">Owner</Label>
+                <Input
+                  id="owner"
+                  value={config.owner}
+                  onChange={(e) => updateBasicConfig('owner', e.target.value)}
+                  placeholder="Enter owner name"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={config.description}
+                onChange={(e) => updateBasicConfig('description', e.target.value)}
+                placeholder="Enter agent description"
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
                 <Select
-                  value={config.configuration.general.logLevel}
-                  onValueChange={(value) => updateConfig('general', 'logLevel', value)}
+                  value={config.status}
+                  onValueChange={(value) => updateBasicConfig('status', value)}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="DEBUG">DEBUG</SelectItem>
-                    <SelectItem value="INFO">INFO</SelectItem>
-                    <SelectItem value="WARN">WARN</SelectItem>
-                    <SelectItem value="ERROR">ERROR</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="maintenance">In Maintenance</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label>Heartbeat Interval (seconds)</Label>
+                <Label htmlFor="accessRoles">Access Roles</Label>
                 <Input
-                  type="number"
-                  value={config.configuration.general.heartbeatInterval}
-                  onChange={(e) => updateConfig('general', 'heartbeatInterval', parseInt(e.target.value))}
+                  id="accessRoles"
+                  value={config.accessRoles.join(', ')}
+                  onChange={(e) => updateBasicConfig('accessRoles', e.target.value.split(',').map(role => role.trim()).filter(role => role))}
+                  placeholder="admin, user, viewer"
                 />
+                <p className="text-sm text-muted-foreground">Comma-separated list of roles</p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              <div className="space-y-2">
-                <Label>Max Retries</Label>
-                <Input
-                  type="number"
-                  value={config.configuration.general.maxRetries}
-                  onChange={(e) => updateConfig('general', 'maxRetries', parseInt(e.target.value))}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="network">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Network className="w-5 h-5" />
-                Network Configuration
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label>Port</Label>
-                <Input
-                  type="number"
-                  value={config.configuration.network.port}
-                  onChange={(e) => updateConfig('network', 'port', parseInt(e.target.value))}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Protocol</Label>
-                <Select
-                  value={config.configuration.network.protocol}
-                  onValueChange={(value) => updateConfig('network', 'protocol', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="HTTP">HTTP</SelectItem>
-                    <SelectItem value="HTTPS">HTTPS</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Timeout (ms)</Label>
-                <Input
-                  type="number"
-                  value={config.configuration.network.timeout}
-                  onChange={(e) => updateConfig('network', 'timeout', parseInt(e.target.value))}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label>Enable Compression</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Compress network traffic to reduce bandwidth
-                  </p>
+        {/* Agent Type Configuration */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bot className="w-5 h-5" />
+              Agent Configuration
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <Label>Agent Type</Label>
+              <RadioGroup
+                value={config.agentType}
+                onValueChange={handleAgentTypeChange}
+                className="flex gap-6"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="langflow" id="langflow" />
+                  <Label htmlFor="langflow" className="flex items-center gap-2">
+                    <Bot className="w-4 h-4" />
+                    Langflow Agent
+                  </Label>
                 </div>
-                <Switch
-                  checked={config.configuration.network.compression}
-                  onCheckedChange={(value) => updateConfig('network', 'compression', value)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="security">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Security Configuration
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label>Enable Encryption</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Encrypt all communication
-                  </p>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="custom" id="custom" />
+                  <Label htmlFor="custom" className="flex items-center gap-2">
+                    <Globe className="w-4 h-4" />
+                    Custom Deployment
+                  </Label>
                 </div>
-                <Switch
-                  checked={config.configuration.security.encryption}
-                  onCheckedChange={(value) => updateConfig('security', 'encryption', value)}
-                />
-              </div>
+              </RadioGroup>
+            </div>
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label>Require Authentication</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Require authentication for all requests
-                  </p>
+            {config.agentType === 'langflow' && config.langflowConfig && (
+              <div className="space-y-4 border-t pt-4">
+                <h4 className="font-medium">Langflow Configuration</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="flowId">Flow ID *</Label>
+                    <Input
+                      id="flowId"
+                      value={config.langflowConfig.flowId}
+                      onChange={(e) => updateLangflowConfig('flowId', e.target.value)}
+                      placeholder="Enter Langflow Flow ID"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="baseUrl">Base URL *</Label>
+                    <Input
+                      id="baseUrl"
+                      value={config.langflowConfig.baseUrl}
+                      onChange={(e) => updateLangflowConfig('baseUrl', e.target.value)}
+                      placeholder="https://api.langflow.example.com"
+                    />
+                  </div>
                 </div>
-                <Switch
-                  checked={config.configuration.security.authRequired}
-                  onCheckedChange={(value) => updateConfig('security', 'authRequired', value)}
-                />
-              </div>
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label>Enable SSL</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Use SSL/TLS for secure connections
-                  </p>
+                <div className="space-y-2">
+                  <Label htmlFor="apiKey">API Key *</Label>
+                  <Input
+                    id="apiKey"
+                    type="password"
+                    value={config.langflowConfig.apiKey}
+                    onChange={(e) => updateLangflowConfig('apiKey', e.target.value)}
+                    placeholder="Enter API key"
+                  />
                 </div>
-                <Switch
-                  checked={config.configuration.security.sslEnabled}
-                  onCheckedChange={(value) => updateConfig('security', 'sslEnabled', value)}
-                />
-              </div>
 
-              <div className="space-y-2">
-                <Label>Certificate Path</Label>
-                <Input
-                  value={config.configuration.security.certificatePath}
-                  onChange={(e) => updateConfig('security', 'certificatePath', e.target.value)}
-                  placeholder="/path/to/certificate.crt"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="maxTokens">Max Tokens</Label>
+                    <Input
+                      id="maxTokens"
+                      type="number"
+                      value={config.langflowConfig.maxTokens || ''}
+                      onChange={(e) => updateLangflowConfig('maxTokens', e.target.value ? parseInt(e.target.value) : undefined)}
+                      placeholder="2048"
+                    />
+                  </div>
 
-        <TabsContent value="monitoring">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="w-5 h-5" />
-                Monitoring Configuration
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label>Enable Metrics</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Collect performance metrics
-                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="temperature">Temperature</Label>
+                    <Input
+                      id="temperature"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="2"
+                      value={config.langflowConfig.temperature || ''}
+                      onChange={(e) => updateLangflowConfig('temperature', e.target.value ? parseFloat(e.target.value) : undefined)}
+                      placeholder="0.7"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between pt-6">
+                    <div className="space-y-1">
+                      <Label>Stream Mode</Label>
+                      <p className="text-sm text-muted-foreground">Enable streaming responses</p>
+                    </div>
+                    <Switch
+                      checked={config.langflowConfig.streamMode || false}
+                      onCheckedChange={(value) => updateLangflowConfig('streamMode', value)}
+                    />
+                  </div>
                 </div>
-                <Switch
-                  checked={config.configuration.monitoring.metricsEnabled}
-                  onCheckedChange={(value) => updateConfig('monitoring', 'metricsEnabled', value)}
-                />
               </div>
+            )}
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label>Enable Logging</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Log system events and errors
-                  </p>
+            {config.agentType === 'custom' && (
+              <div className="space-y-4 border-t pt-4">
+                <h4 className="font-medium">Custom Deployment Configuration</h4>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="iframeUrl">Iframe URL *</Label>
+                  <Input
+                    id="iframeUrl"
+                    value={config.customConfig?.iframeUrl || ''}
+                    onChange={(e) => updateCustomConfig('iframeUrl', e.target.value)}
+                    placeholder="https://your-agent-deployment.com"
+                  />
+                  <p className="text-sm text-muted-foreground">URL to embed your custom agent interface</p>
                 </div>
-                <Switch
-                  checked={config.configuration.monitoring.loggingEnabled}
-                  onCheckedChange={(value) => updateConfig('monitoring', 'loggingEnabled', value)}
-                />
               </div>
-
-              <div className="space-y-2">
-                <Label>Alert Threshold (%)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={config.configuration.monitoring.alertThreshold}
-                  onChange={(e) => updateConfig('monitoring', 'alertThreshold', parseInt(e.target.value))}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Reporting Interval (seconds)</Label>
-                <Input
-                  type="number"
-                  value={config.configuration.monitoring.reportingInterval}
-                  onChange={(e) => updateConfig('monitoring', 'reportingInterval', parseInt(e.target.value))}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
