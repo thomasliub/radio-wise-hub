@@ -252,7 +252,7 @@ export default function Knowledge() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => navigate(`/knowledge/${article.id}`)}
+                  onClick={() => navigate(`/knowledge/${article.id}/config`)}
                 >
                   <Settings className="w-4 h-4 mr-1" />
                   Manage

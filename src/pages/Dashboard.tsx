@@ -125,7 +125,7 @@ export default function Dashboard() {
             <Button 
               variant="outline" 
               className="h-auto p-4 flex-col gap-2 border-primary text-primary hover:bg-primary/5"
-              onClick={() => navigate("/deploy-knowledge")}
+              onClick={() => navigate("/knowledge/config")}
             >
               <BookOpen className="w-6 h-6" />
               <div className="text-center">
