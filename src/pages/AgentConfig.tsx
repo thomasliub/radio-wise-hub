@@ -43,28 +43,53 @@ export default function AgentConfig() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  const isNewAgent = id === 'new';
 
   useEffect(() => {
-    // Simulate fetching agent configuration
-    setConfig({
-      id: id || '1',
-      name: `AI Agent ${id?.padStart(3, '0')}`,
-      description: 'A powerful AI agent for automated tasks and intelligent assistance.',
-      status: 'active',
-      owner: 'John Doe',
-      accessRoles: ['admin', 'user'],
-      lastUpdated: new Date().toISOString(),
-      agentType: 'langflow',
-      langflowConfig: {
-        flowId: 'flow-12345',
-        apiKey: '',
-        baseUrl: 'https://api.langflow.example.com',
-        maxTokens: 2048,
-        streamMode: true,
-        temperature: 0.7
-      }
-    });
-  }, [id]);
+    if (isNewAgent) {
+      // Create new agent configuration
+      setConfig({
+        id: 'new',
+        name: '',
+        description: '',
+        status: 'inactive',
+        owner: '',
+        accessRoles: ['user'],
+        lastUpdated: new Date().toISOString(),
+        agentType: 'langflow',
+        langflowConfig: {
+          flowId: '',
+          apiKey: '',
+          baseUrl: '',
+          maxTokens: 2048,
+          streamMode: false,
+          temperature: 0.7
+        }
+      });
+      setHasChanges(true); // New agent should be saveable
+    } else {
+      // Simulate fetching existing agent configuration
+      setConfig({
+        id: id || '1',
+        name: `AI Agent ${id?.padStart(3, '0')}`,
+        description: 'A powerful AI agent for automated tasks and intelligent assistance.',
+        status: 'active',
+        owner: 'John Doe',
+        accessRoles: ['admin', 'user'],
+        lastUpdated: new Date().toISOString(),
+        agentType: 'langflow',
+        langflowConfig: {
+          flowId: 'flow-12345',
+          apiKey: '',
+          baseUrl: 'https://api.langflow.example.com',
+          maxTokens: 2048,
+          streamMode: true,
+          temperature: 0.7
+        }
+      });
+    }
+  }, [id, isNewAgent]);
 
   const updateBasicConfig = (key: keyof AgentConfig, value: any) => {
     if (!config) return;
@@ -128,9 +153,12 @@ export default function AgentConfig() {
     
     setIsLoading(true);
     try {
+      const method = isNewAgent ? 'POST' : 'PUT';
+      const url = isNewAgent ? '/api/agents' : `/api/agents/${id}/config`;
+      
       // Example API call to save configuration
-      const response = await fetch(`/api/agents/${id}/config`, {
-        method: 'PUT',
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
@@ -145,17 +173,26 @@ export default function AgentConfig() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      const savedAgent = await response.json();
+
       toast({
-        title: "Configuration Saved",
-        description: "Agent configuration has been updated successfully.",
+        title: isNewAgent ? "Agent Created" : "Configuration Saved",
+        description: isNewAgent 
+          ? "New agent has been created successfully." 
+          : "Agent configuration has been updated successfully.",
       });
       
       setHasChanges(false);
+      
+      if (isNewAgent && savedAgent.id) {
+        // Redirect to the newly created agent's config page
+        navigate(`/agents/${savedAgent.id}/config`);
+      }
     } catch (error) {
       console.error("Failed to save configuration:", error);
       toast({
         title: "Save Failed",
-        description: "Failed to save agent configuration. Please try again.",
+        description: `Failed to ${isNewAgent ? 'create' : 'save'} agent configuration. Please try again.`,
         variant: "destructive",
       });
     } finally {
@@ -245,7 +282,9 @@ export default function AgentConfig() {
               <Settings className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">{config.name} Configuration</h1>
+              <h1 className="text-2xl font-bold text-foreground">
+                {isNewAgent ? 'Deploy New Agent' : `${config.name} Configuration`}
+              </h1>
               <div className="flex items-center gap-2">
             <Badge variant={config.status === 'active' ? 'default' : config.status === 'inactive' ? 'secondary' : 'destructive'}>
               {config.status.charAt(0).toUpperCase() + config.status.slice(1)}
@@ -259,50 +298,54 @@ export default function AgentConfig() {
         </div>
         
         <div className="flex gap-2">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button 
-                variant="destructive" 
-                size="sm"
-                disabled={isDeleting}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete Agent
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Agent</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete "{config.name}"? This action cannot be undone and will permanently remove the agent and all its configuration.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={handleDelete}
-                  className="bg-destructive hover:bg-destructive/90"
+          {!isNewAgent && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  disabled={isDeleting}
                 >
-                  {isDeleting ? 'Deleting...' : 'Delete Agent'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Agent
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Agent</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{config.name}"? This action cannot be undone and will permanently remove the agent and all its configuration.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDelete}
+                    className="bg-destructive hover:bg-destructive/90"
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete Agent'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           
-          <Button 
-            variant="outline" 
-            onClick={handleReset}
-            disabled={!hasChanges || isLoading}
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Reset
-          </Button>
+          {!isNewAgent && (
+            <Button 
+              variant="outline" 
+              onClick={handleReset}
+              disabled={!hasChanges || isLoading}
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Reset
+            </Button>
+          )}
           <Button 
             onClick={handleSave}
             disabled={!hasChanges || isLoading}
           >
             <Save className="w-4 h-4 mr-2" />
-            {isLoading ? 'Saving...' : 'Save Changes'}
+            {isLoading ? (isNewAgent ? 'Creating...' : 'Saving...') : (isNewAgent ? 'Create Agent' : 'Save Changes')}
           </Button>
         </div>
       </div>

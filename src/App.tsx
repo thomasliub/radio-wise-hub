@@ -10,7 +10,7 @@ import Knowledge from "./pages/Knowledge";
 import AgentChat from "./pages/AgentChat";
 import AgentConfig from "./pages/AgentConfig";
 import KnowledgeDetail from "./pages/KnowledgeDetail";
-import DeployAgent from "./pages/DeployAgent";
+
 import DeployKnowledge from "./pages/DeployKnowledge";
 import ViewAgentData from "./pages/ViewAgentData";
 import NotFound from "./pages/NotFound";
@@ -31,7 +31,7 @@ const App = () => (
             <Route path="/agents/:id/config" element={<AgentConfig />} />
             <Route path="/knowledge" element={<Knowledge />} />
             <Route path="/knowledge/:id" element={<KnowledgeDetail />} />
-            <Route path="/deploy-agent" element={<DeployAgent />} />
+            
             <Route path="/deploy-knowledge" element={<DeployKnowledge />} />
             <Route path="/view-agent-data" element={<ViewAgentData />} />
             <Route path="/data" element={<div className="p-8 text-center text-muted-foreground">Agent Data view coming soon</div>} />

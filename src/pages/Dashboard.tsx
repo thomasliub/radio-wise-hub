@@ -114,7 +114,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Button 
               className="h-auto p-4 flex-col gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
-              onClick={() => navigate("/deploy-agent")}
+              onClick={() => navigate("/agents/new/config")}
             >
               <Server className="w-6 h-6" />
               <div className="text-center">
