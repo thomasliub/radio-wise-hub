@@ -31,7 +31,7 @@ export interface DashboardStats {
 }
 
 // Base API URL - replace with your actual API endpoint
-const API_BASE_URL = process.env.VITE_API_BASE_URL || 'https://api.example.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.example.com';
 
 // Generic fetch function with error handling
 async function apiRequest<T>(endpoint: string): Promise<T> {
