@@ -1,42 +1,77 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Server, BookOpen, Activity, AlertCircle } from "lucide-react";
-
-const stats = [
-  {
-    title: "Active Agents",
-    value: "12",
-    change: "+2 from last hour",
-    icon: Server,
-    color: "text-success",
-    bgColor: "bg-success/10"
-  },
-  {
-    title: "Knowledge Articles",
-    value: "1,247",
-    change: "+15 this week",
-    icon: BookOpen,
-    color: "text-primary",
-    bgColor: "bg-primary/10"
-  },
-  {
-    title: "System Health",
-    value: "98.5%",
-    change: "Excellent",
-    icon: Activity,
-    color: "text-success",
-    bgColor: "bg-success/10"
-  },
-  {
-    title: "Alerts",
-    value: "3",
-    change: "2 resolved today",
-    icon: AlertCircle,
-    color: "text-warning",
-    bgColor: "bg-warning/10"
-  }
-];
+import { useDashboardStats } from "@/hooks/useDashboard";
 
 export function DashboardStats() {
+  const { data: statsData, isLoading, error } = useDashboardStats();
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} className="shadow-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-8 rounded-lg" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-16 mb-2" />
+              <Skeleton className="h-3 w-20" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="shadow-card">
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-2 text-destructive">
+            <AlertCircle className="w-4 h-4" />
+            <p className="text-sm">Failed to load dashboard statistics</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const stats = [
+    {
+      title: "Active Agents",
+      value: statsData?.activeAgents?.toString() || "0",
+      change: statsData?.agentChange || "No data",
+      icon: Server,
+      color: "text-success",
+      bgColor: "bg-success/10"
+    },
+    {
+      title: "Knowledge Articles", 
+      value: statsData?.knowledgeArticles?.toLocaleString() || "0",
+      change: statsData?.knowledgeChange || "No data",
+      icon: BookOpen,
+      color: "text-primary",
+      bgColor: "bg-primary/10"
+    },
+    {
+      title: "System Health",
+      value: statsData?.systemHealth ? `${statsData.systemHealth}%` : "0%",
+      change: statsData?.healthStatus || "Unknown",
+      icon: Activity,
+      color: "text-success",
+      bgColor: "bg-success/10"
+    },
+    {
+      title: "Alerts",
+      value: statsData?.alerts?.toString() || "0",
+      change: statsData?.alertsResolved || "No data",
+      icon: AlertCircle,
+      color: "text-warning",
+      bgColor: "bg-warning/10"
+    }
+  ];
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {stats.map((stat) => (

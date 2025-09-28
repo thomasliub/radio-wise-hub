@@ -3,6 +3,9 @@ import { DashboardStats } from "@/components/DashboardStats";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useRecentAgents } from "@/hooks/useAgents";
+import { useRecentKnowledge } from "@/hooks/useKnowledge";
 import { 
   Server, 
   Activity, 
@@ -10,22 +13,14 @@ import {
   ArrowRight, 
   TrendingUp,
   Users,
-  Database
+  Database,
+  AlertCircle
 } from "lucide-react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const recentAgents = [
-    { id: "1", name: "RAN-Agent-001", status: "active", location: "Stockholm DC" },
-    { id: "2", name: "RAN-Agent-002", status: "maintenance", location: "Helsinki DC" },
-    { id: "3", name: "RAN-Agent-003", status: "active", location: "Oslo DC" },
-  ];
-
-  const recentKnowledge = [
-    { title: "5G NR Configuration Guide", category: "Configuration", updated: "2 hours ago" },
-    { title: "Radio Optimization Best Practices", category: "Optimization", updated: "4 hours ago" },
-    { title: "Troubleshooting Network Issues", category: "Troubleshooting", updated: "1 day ago" },
-  ];
+  const { data: recentAgents, isLoading: agentsLoading, error: agentsError } = useRecentAgents();
+  const { data: recentKnowledge, isLoading: knowledgeLoading, error: knowledgeError } = useRecentKnowledge();
 
   return (
     <div className="space-y-8">
@@ -54,24 +49,46 @@ export default function Dashboard() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            {recentAgents.map((agent) => (
-              <div key={agent.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Server className="w-4 h-4 text-primary" />
+            {agentsLoading ? (
+              [...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="w-8 h-8 rounded-lg" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-sm">{agent.name}</p>
-                    <p className="text-xs text-muted-foreground">{agent.location}</p>
-                  </div>
+                  <Skeleton className="h-6 w-16 rounded-full" />
                 </div>
-                <Badge 
-                  className={agent.status === 'active' ? 'bg-success text-success-foreground' : 'bg-warning text-warning-foreground'}
-                >
-                  {agent.status}
-                </Badge>
+              ))
+            ) : agentsError ? (
+              <div className="flex items-center gap-2 text-destructive p-3">
+                <AlertCircle className="w-4 h-4" />
+                <p className="text-sm">Failed to load agents</p>
               </div>
-            ))}
+            ) : recentAgents?.length ? (
+              recentAgents.map((agent) => (
+                <div key={agent.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Server className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{agent.name}</p>
+                      <p className="text-xs text-muted-foreground">{agent.location}</p>
+                    </div>
+                  </div>
+                  <Badge 
+                    className={agent.status === 'active' ? 'bg-success text-success-foreground' : agent.status === 'maintenance' ? 'bg-warning text-warning-foreground' : 'bg-secondary text-secondary-foreground'}
+                  >
+                    {agent.status}
+                  </Badge>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground text-center p-3">No recent agents found</p>
+            )}
           </CardContent>
         </Card>
 
@@ -87,17 +104,36 @@ export default function Dashboard() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            {recentKnowledge.map((item, index) => (
-              <div key={index} className="flex items-start justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary/70 transition-colors cursor-pointer">
-                <div className="flex-1">
-                  <p className="font-medium text-sm mb-1">{item.title}</p>
+            {knowledgeLoading ? (
+              [...Array(3)].map((_, i) => (
+                <div key={i} className="p-3 rounded-lg bg-secondary/50">
+                  <Skeleton className="h-4 w-48 mb-2" />
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">{item.category}</Badge>
-                    <span className="text-xs text-muted-foreground">Updated {item.updated}</span>
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                    <Skeleton className="h-3 w-24" />
                   </div>
                 </div>
+              ))
+            ) : knowledgeError ? (
+              <div className="flex items-center gap-2 text-destructive p-3">
+                <AlertCircle className="w-4 h-4" />
+                <p className="text-sm">Failed to load knowledge articles</p>
               </div>
-            ))}
+            ) : recentKnowledge?.length ? (
+              recentKnowledge.map((item) => (
+                <div key={item.id} className="flex items-start justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary/70 transition-colors cursor-pointer">
+                  <div className="flex-1">
+                    <p className="font-medium text-sm mb-1">{item.title}</p>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">{item.category}</Badge>
+                      <span className="text-xs text-muted-foreground">Updated {item.updated}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground text-center p-3">No recent knowledge articles found</p>
+            )}
           </CardContent>
         </Card>
       </div>
