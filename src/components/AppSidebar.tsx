@@ -37,7 +37,7 @@ export function AppSidebar() {
     isActive
   }: {
     isActive: boolean;
-  }) => isActive ? "bg-primary text-primary-foreground font-medium shadow-sm" : "hover:bg-secondary/60 text-muted-foreground hover:text-foreground";
+  }) => isActive ? "bg-primary text-primary-foreground font-medium shadow-sm hover:bg-primary hover:text-primary-foreground" : "hover:bg-secondary/60 text-muted-foreground hover:text-foreground";
   return <Sidebar className={isCollapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarContent className="border-r bg-slate-600 rounded-none">
         <div className="p-4 border-b">
