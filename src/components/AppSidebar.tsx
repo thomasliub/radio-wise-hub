@@ -33,7 +33,6 @@ export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const isCollapsed = state === "collapsed";
-  const isActive = (path: string) => currentPath === path;
   const getNavCls = ({
     isActive
   }: {
