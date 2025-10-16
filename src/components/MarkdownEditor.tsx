@@ -7,7 +7,15 @@ import { Image, Eye, Edit } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface MarkdownEditorProps {
   value: string;
@@ -19,65 +27,32 @@ interface MarkdownEditorProps {
 
 export function MarkdownEditor({ value, onChange, label, placeholder, rows = 8 }: MarkdownEditorProps) {
   const [activeTab, setActiveTab] = useState("edit");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [imagePath, setImagePath] = useState("");
+  const [imageAlt, setImageAlt] = useState("");
   const { toast } = useToast();
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+  const handleInsertImage = () => {
+    if (!imagePath.trim()) {
       toast({
-        title: "File too large",
-        description: "Please upload an image smaller than 5MB",
+        title: "Image path required",
+        description: "Please enter an image path or URL",
         variant: "destructive",
       });
       return;
     }
 
-    // Check file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Invalid file type",
-        description: "Please upload an image file",
-        variant: "destructive",
-      });
-      return;
-    }
+    const markdownImage = `![${imageAlt || "image"}](${imagePath})`;
+    onChange(value + (value ? '\n\n' : '') + markdownImage);
+    
+    toast({
+      title: "Image inserted",
+      description: "Image reference has been added to markdown",
+    });
 
-    try {
-      // Generate unique filename
-      const timestamp = Date.now();
-      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const fileName = `${timestamp}-${sanitizedName}`;
-      const filePath = `knowledge-base/${fileName}`;
-
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('knowledge-base-images')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data } = supabase.storage
-        .from('knowledge-base-images')
-        .getPublicUrl(filePath);
-
-      const markdownImage = `![${file.name}](${data.publicUrl})`;
-      onChange(value + (value ? '\n\n' : '') + markdownImage);
-      
-      toast({
-        title: "Image uploaded",
-        description: "Image has been added to markdown",
-      });
-    } catch (error) {
-      toast({
-        title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload image",
-        variant: "destructive",
-      });
-    }
+    setImagePath("");
+    setImageAlt("");
+    setIsDialogOpen(false);
   };
 
   return (
@@ -95,23 +70,52 @@ export function MarkdownEditor({ value, onChange, label, placeholder, rows = 8 }
               Preview
             </TabsTrigger>
           </TabsList>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={() => document.getElementById('image-upload')?.click()}
-          >
-            <Image className="w-4 h-4" />
-            Insert Image
-          </Button>
-          <input
-            id="image-upload"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleImageUpload}
-          />
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <Image className="w-4 h-4" />
+                Insert Image
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Insert Image</DialogTitle>
+                <DialogDescription>
+                  Enter the image path or URL. For local images, use paths like "/images/photo.jpg" or relative paths.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="image-path">Image Path/URL</Label>
+                  <Input
+                    id="image-path"
+                    placeholder="/images/photo.jpg or https://example.com/image.png"
+                    value={imagePath}
+                    onChange={(e) => setImagePath(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleInsertImage()}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="image-alt">Alt Text (optional)</Label>
+                  <Input
+                    id="image-alt"
+                    placeholder="Description of the image"
+                    value={imageAlt}
+                    onChange={(e) => setImageAlt(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleInsertImage()}
+                  />
+                </div>
+                <Button onClick={handleInsertImage} className="w-full">
+                  Insert
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
         
         <TabsContent value="edit" className="mt-0">
@@ -123,7 +127,7 @@ export function MarkdownEditor({ value, onChange, label, placeholder, rows = 8 }
             className="font-mono text-sm"
           />
           <p className="text-xs text-muted-foreground mt-2">
-            Supports markdown syntax. Use the "Insert Image" button to embed images.
+            Supports markdown syntax. Use the "Insert Image" button to reference images by path or URL.
           </p>
         </TabsContent>
         
