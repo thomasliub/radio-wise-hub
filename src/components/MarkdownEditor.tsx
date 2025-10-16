@@ -7,6 +7,7 @@ import { Image, Eye, Edit } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MarkdownEditorProps {
   value: string;
@@ -20,7 +21,7 @@ export function MarkdownEditor({ value, onChange, label, placeholder, rows = 8 }
   const [activeTab, setActiveTab] = useState("edit");
   const { toast } = useToast();
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -44,17 +45,39 @@ export function MarkdownEditor({ value, onChange, label, placeholder, rows = 8 }
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      const markdownImage = `![${file.name}](${base64})`;
+    try {
+      // Generate unique filename
+      const timestamp = Date.now();
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const fileName = `${timestamp}-${sanitizedName}`;
+      const filePath = `knowledge-base/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('knowledge-base-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data } = supabase.storage
+        .from('knowledge-base-images')
+        .getPublicUrl(filePath);
+
+      const markdownImage = `![${file.name}](${data.publicUrl})`;
       onChange(value + (value ? '\n\n' : '') + markdownImage);
+      
       toast({
-        title: "Image added",
-        description: "Image has been embedded in markdown",
+        title: "Image uploaded",
+        description: "Image has been added to markdown",
       });
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Failed to upload image",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
