@@ -73,3 +73,22 @@ export const dashboardApi = {
   getStats: (): Promise<DashboardStats> => 
     apiRequest<DashboardStats>('/dashboard/stats'),
 };
+
+// Image upload API
+export const imageApi = {
+  uploadImage: async (file: File): Promise<{ path: string }> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const response = await fetch(`${API_BASE_URL}/upload-image`, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Image upload failed: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+};

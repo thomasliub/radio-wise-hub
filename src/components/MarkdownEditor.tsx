@@ -30,9 +30,80 @@ export function MarkdownEditor({ value, onChange, label, placeholder, rows = 8 }
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [imagePath, setImagePath] = useState("");
   const [imageAlt, setImageAlt] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
-  const handleInsertImage = () => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+      setSelectedFile(file);
+      setImageAlt(file.name.split('.')[0]);
+    }
+  };
+
+  const handleUploadImage = async () => {
+    if (!selectedFile) {
+      toast({
+        title: "No file selected",
+        description: "Please select an image file to upload",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+      
+      // Call the API to upload the image
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await response.json();
+      const imagePath = data.path; // Expecting { path: "dir/image-name.jpg" }
+      
+      const markdownImage = `![${imageAlt || "image"}](${imagePath})`;
+      onChange(value + (value ? '\n\n' : '') + markdownImage);
+      
+      toast({
+        title: "Image uploaded",
+        description: "Image has been uploaded and added to markdown",
+      });
+
+      setImagePath("");
+      setImageAlt("");
+      setSelectedFile(null);
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleInsertPath = () => {
     if (!imagePath.trim()) {
       toast({
         title: "Image path required",
@@ -86,34 +157,76 @@ export function MarkdownEditor({ value, onChange, label, placeholder, rows = 8 }
               <DialogHeader>
                 <DialogTitle>Insert Image</DialogTitle>
                 <DialogDescription>
-                  Enter the image path or URL. For local images, use paths like "/images/photo.jpg" or relative paths.
+                  Upload an image file or enter an image path/URL.
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="image-path">Image Path/URL</Label>
-                  <Input
-                    id="image-path"
-                    placeholder="/images/photo.jpg or https://example.com/image.png"
-                    value={imagePath}
-                    onChange={(e) => setImagePath(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleInsertImage()}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="image-alt">Alt Text (optional)</Label>
-                  <Input
-                    id="image-alt"
-                    placeholder="Description of the image"
-                    value={imageAlt}
-                    onChange={(e) => setImageAlt(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleInsertImage()}
-                  />
-                </div>
-                <Button onClick={handleInsertImage} className="w-full">
-                  Insert
-                </Button>
-              </div>
+              <Tabs defaultValue="upload" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="upload">Upload File</TabsTrigger>
+                  <TabsTrigger value="path">Enter Path</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="upload" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="image-file">Select Image</Label>
+                    <Input
+                      id="image-file"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      disabled={isUploading}
+                    />
+                    {selectedFile && (
+                      <p className="text-xs text-muted-foreground">
+                        Selected: {selectedFile.name}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="image-alt-upload">Alt Text</Label>
+                    <Input
+                      id="image-alt-upload"
+                      placeholder="Description of the image"
+                      value={imageAlt}
+                      onChange={(e) => setImageAlt(e.target.value)}
+                      disabled={isUploading}
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleUploadImage} 
+                    className="w-full"
+                    disabled={!selectedFile || isUploading}
+                  >
+                    {isUploading ? "Uploading..." : "Upload & Insert"}
+                  </Button>
+                </TabsContent>
+
+                <TabsContent value="path" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="image-path">Image Path/URL</Label>
+                    <Input
+                      id="image-path"
+                      placeholder="/images/photo.jpg or https://example.com/image.png"
+                      value={imagePath}
+                      onChange={(e) => setImagePath(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleInsertPath()}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="image-alt-path">Alt Text (optional)</Label>
+                    <Input
+                      id="image-alt-path"
+                      placeholder="Description of the image"
+                      value={imageAlt}
+                      onChange={(e) => setImageAlt(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleInsertPath()}
+                    />
+                  </div>
+                  <Button onClick={handleInsertPath} className="w-full">
+                    Insert
+                  </Button>
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
         </div>
