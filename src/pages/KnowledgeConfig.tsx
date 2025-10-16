@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { MarkdownEditor } from "@/components/MarkdownEditor";
 import { 
   BookOpen, 
   Upload, 
@@ -235,16 +236,15 @@ export default function KnowledgeConfig() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="content-desc">Content Description</Label>
-                <Textarea 
-                  id="content-desc"
+                <MarkdownEditor
+                  label="Content Description"
                   value={formData.description.content}
-                  onChange={(e) => setFormData(prev => ({ 
+                  onChange={(value) => setFormData(prev => ({ 
                     ...prev, 
-                    description: { ...prev.description, content: e.target.value }
+                    description: { ...prev.description, content: value }
                   }))}
-                  placeholder="Describe what content is included in this knowledge base..."
-                  rows={3}
+                  placeholder="Describe what content is included in this knowledge base... Supports markdown format and embedded images."
+                  rows={8}
                 />
               </div>
 
