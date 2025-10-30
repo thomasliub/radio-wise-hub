@@ -216,17 +216,62 @@ export default function AgentChat() {
                           <ReactMarkdown 
                             remarkPlugins={[remarkGfm]}
                             components={{
-                              p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                              ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
-                              ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
-                              li: ({ children }) => <li className="mb-1">{children}</li>,
-                              code: ({ children }) => <code className="bg-muted px-1 py-0.5 rounded text-xs">{children}</code>,
-                              pre: ({ children }) => <pre className="bg-muted p-2 rounded overflow-x-auto text-xs">{children}</pre>,
-                              h1: ({ children }) => <h1 className="text-lg font-semibold mb-2">{children}</h1>,
-                              h2: ({ children }) => <h2 className="text-base font-semibold mb-2">{children}</h2>,
-                              h3: ({ children }) => <h3 className="text-sm font-semibold mb-1">{children}</h3>,
-                              blockquote: ({ children }) => <blockquote className="border-l-2 border-muted-foreground pl-2 italic">{children}</blockquote>,
-                              a: ({ children, href }) => <a href={href} className="text-primary underline hover:no-underline" target="_blank" rel="noopener noreferrer">{children}</a>,
+                              p: ({ children }) => <p className="mb-3 last:mb-0 leading-relaxed text-foreground">{children}</p>,
+                              ul: ({ children }) => <ul className="list-disc pl-5 mb-3 space-y-1.5 marker:text-primary">{children}</ul>,
+                              ol: ({ children }) => <ol className="list-decimal pl-5 mb-3 space-y-1.5 marker:text-primary">{children}</ol>,
+                              li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                              code: ({ node, inline, ...props }: any) => 
+                                inline ? (
+                                  <code className="bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono text-xs font-semibold border border-primary/20" {...props} />
+                                ) : (
+                                  <code className="font-mono text-xs" {...props} />
+                                ),
+                              pre: ({ children }) => (
+                                <pre className="bg-card border border-border p-4 rounded-lg overflow-x-auto mb-3 shadow-sm">
+                                  {children}
+                                </pre>
+                              ),
+                              h1: ({ children }) => <h1 className="text-xl font-bold mb-3 mt-4 first:mt-0 text-foreground border-b border-border pb-2">{children}</h1>,
+                              h2: ({ children }) => <h2 className="text-lg font-bold mb-2.5 mt-3 first:mt-0 text-foreground">{children}</h2>,
+                              h3: ({ children }) => <h3 className="text-base font-semibold mb-2 mt-2.5 first:mt-0 text-foreground">{children}</h3>,
+                              h4: ({ children }) => <h4 className="text-sm font-semibold mb-1.5 mt-2 first:mt-0 text-foreground">{children}</h4>,
+                              blockquote: ({ children }) => (
+                                <blockquote className="border-l-4 border-primary bg-primary/5 pl-4 pr-3 py-2 mb-3 italic rounded-r">
+                                  {children}
+                                </blockquote>
+                              ),
+                              a: ({ children, href }) => (
+                                <a 
+                                  href={href} 
+                                  className="text-primary font-medium underline decoration-primary/30 hover:decoration-primary transition-colors" 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                >
+                                  {children}
+                                </a>
+                              ),
+                              table: ({ children }) => (
+                                <div className="overflow-x-auto mb-3">
+                                  <table className="min-w-full border border-border rounded-lg overflow-hidden">
+                                    {children}
+                                  </table>
+                                </div>
+                              ),
+                              thead: ({ children }) => <thead className="bg-muted">{children}</thead>,
+                              tbody: ({ children }) => <tbody className="divide-y divide-border">{children}</tbody>,
+                              tr: ({ children }) => <tr className="hover:bg-muted/50 transition-colors">{children}</tr>,
+                              th: ({ children }) => <th className="px-4 py-2 text-left text-xs font-semibold text-foreground">{children}</th>,
+                              td: ({ children }) => <td className="px-4 py-2 text-sm">{children}</td>,
+                              hr: () => <hr className="my-4 border-border" />,
+                              img: ({ src, alt }) => (
+                                <img 
+                                  src={src} 
+                                  alt={alt || ''} 
+                                  className="rounded-lg shadow-sm my-3 max-w-full h-auto border border-border"
+                                />
+                              ),
+                              strong: ({ children }) => <strong className="font-bold text-foreground">{children}</strong>,
+                              em: ({ children }) => <em className="italic text-foreground">{children}</em>,
                             }}
                           >
                             {message.content}
