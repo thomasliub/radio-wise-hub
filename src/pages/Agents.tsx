@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, Plus, Filter, ChevronRight, FolderOpen, Folder } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Category structure with subcategories
 interface Category {
@@ -16,6 +17,10 @@ interface Category {
 }
 
 const categoryStructure: Category[] = [
+  {
+    id: "all",
+    name: "All Agents",
+  },
   {
     id: "nordic",
     name: "Nordic Region",
@@ -116,16 +121,54 @@ const mockAgents = [
 
 export default function Agents() {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
+  const [agentSearch, setAgentSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(categoryStructure.map((c) => c.id))
   );
 
-  const filteredAgents = mockAgents.filter((agent) => {
+  // Get all category IDs including subcategories for a given category
+  const getAllCategoryIds = (category: Category): string[] => {
+    const ids = [category.id];
+    if (category.subcategories) {
+      category.subcategories.forEach((sub) => {
+        ids.push(...getAllCategoryIds(sub));
+      });
+    }
+    return ids;
+  };
+
+  // Get agents for the selected category (including subcategories)
+  const getAgentsForSelectedCategory = () => {
+    if (selectedCategory === "all") {
+      return mockAgents;
+    }
+
+    // Find the category and get all its IDs
+    const findCategory = (cats: Category[], id: string): Category | null => {
+      for (const cat of cats) {
+        if (cat.id === id) return cat;
+        if (cat.subcategories) {
+          const found = findCategory(cat.subcategories, id);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const category = findCategory(categoryStructure, selectedCategory);
+    if (!category) return [];
+
+    const categoryIds = getAllCategoryIds(category);
+    return mockAgents.filter((agent) => categoryIds.includes(agent.categoryId));
+  };
+
+  const filteredAgents = getAgentsForSelectedCategory().filter((agent) => {
     const matchesSearch =
-      agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      agent.location.toLowerCase().includes(searchTerm.toLowerCase());
+      agent.name.toLowerCase().includes(agentSearch.toLowerCase()) ||
+      agent.location.toLowerCase().includes(agentSearch.toLowerCase());
     const matchesStatus = statusFilter === "all" || agent.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -142,19 +185,9 @@ export default function Agents() {
     });
   };
 
-  const getAgentsForCategory = (categoryId: string) => {
-    return filteredAgents.filter((agent) => agent.categoryId === categoryId);
-  };
-
   const getCategoryAgentCount = (category: Category): number => {
-    let count = getAgentsForCategory(category.id).length;
-    if (category.subcategories) {
-      count += category.subcategories.reduce(
-        (sum, sub) => sum + getAgentsForCategory(sub.id).length,
-        0
-      );
-    }
-    return count;
+    const categoryIds = getAllCategoryIds(category);
+    return mockAgents.filter((agent) => categoryIds.includes(agent.categoryId)).length;
   };
 
   const handleViewDetails = (id: string) => {
@@ -171,69 +204,90 @@ export default function Agents() {
     maintenance: mockAgents.filter((a) => a.status === "maintenance").length,
   };
 
-  const renderCategorySection = (category: Category, level: number = 0) => {
-    const isExpanded = expandedCategories.has(category.id);
-    const directAgents = getAgentsForCategory(category.id);
-    const totalCount = getCategoryAgentCount(category);
-    const hasContent = totalCount > 0 || category.subcategories;
+  // Filter categories based on search
+  const filterCategories = (categories: Category[], search: string): Category[] => {
+    if (!search) return categories;
+    
+    return categories.reduce<Category[]>((acc, cat) => {
+      const matchesSearch = cat.name.toLowerCase().includes(search.toLowerCase());
+      const filteredSubs = cat.subcategories 
+        ? filterCategories(cat.subcategories, search)
+        : [];
+      
+      if (matchesSearch || filteredSubs.length > 0) {
+        acc.push({
+          ...cat,
+          subcategories: filteredSubs.length > 0 ? filteredSubs : cat.subcategories,
+        });
+      }
+      return acc;
+    }, []);
+  };
 
-    if (totalCount === 0 && !category.subcategories) {
-      return null;
-    }
+  const filteredCategories = filterCategories(categoryStructure, categorySearch);
+
+  const renderCategoryItem = (category: Category, level: number = 0) => {
+    const isExpanded = expandedCategories.has(category.id);
+    const isSelected = selectedCategory === category.id;
+    const agentCount = getCategoryAgentCount(category);
+    const hasSubcategories = category.subcategories && category.subcategories.length > 0;
 
     return (
-      <div key={category.id} className={`${level > 0 ? "ml-6" : ""}`}>
-        <Collapsible open={isExpanded} onOpenChange={() => toggleCategory(category.id)}>
-          <CollapsibleTrigger className="flex items-center gap-2 w-full p-3 rounded-lg hover:bg-muted/50 transition-colors group">
-            <ChevronRight
-              className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${
-                isExpanded ? "rotate-90" : ""
-              }`}
-            />
-            {isExpanded ? (
-              <FolderOpen className="w-5 h-5 text-primary" />
-            ) : (
-              <Folder className="w-5 h-5 text-muted-foreground group-hover:text-primary" />
-            )}
-            <span className="font-medium text-foreground">{category.name}</span>
-            <Badge variant="secondary" className="ml-auto">
-              {totalCount} agent{totalCount !== 1 ? "s" : ""}
-            </Badge>
-          </CollapsibleTrigger>
+      <div key={category.id}>
+        <div
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-colors",
+            "hover:bg-muted/50",
+            isSelected && "bg-primary/10 text-primary border-l-2 border-primary",
+            level > 0 && "ml-4"
+          )}
+          onClick={() => setSelectedCategory(category.id)}
+        >
+          {hasSubcategories ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleCategory(category.id);
+              }}
+              className="p-0.5 hover:bg-muted rounded"
+            >
+              <ChevronRight
+                className={cn(
+                  "w-4 h-4 text-muted-foreground transition-transform duration-200",
+                  isExpanded && "rotate-90"
+                )}
+              />
+            </button>
+          ) : (
+            <span className="w-5" />
+          )}
+          
+          {isExpanded && hasSubcategories ? (
+            <FolderOpen className="w-4 h-4 text-primary shrink-0" />
+          ) : (
+            <Folder className="w-4 h-4 text-muted-foreground shrink-0" />
+          )}
+          
+          <span className={cn("text-sm truncate flex-1", isSelected && "font-medium")}>
+            {category.name}
+          </span>
+          
+          <Badge variant="secondary" className="text-xs shrink-0">
+            {agentCount}
+          </Badge>
+        </div>
 
-          <CollapsibleContent className="mt-2">
-            {/* Subcategories */}
-            {category.subcategories && (
-              <div className="space-y-1">
-                {category.subcategories.map((sub) => renderCategorySection(sub, level + 1))}
-              </div>
-            )}
-
-            {/* Direct agents in this category */}
-            {directAgents.length > 0 && (
-              <div
-                className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3 ${
-                  level > 0 ? "ml-6" : ""
-                }`}
-              >
-                {directAgents.map((agent) => (
-                  <AgentCard
-                    key={agent.id}
-                    agent={agent}
-                    onViewDetails={handleViewDetails}
-                    onManageAgent={handleManageAgent}
-                  />
-                ))}
-              </div>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
+        {hasSubcategories && isExpanded && (
+          <div className="mt-1">
+            {category.subcategories!.map((sub) => renderCategoryItem(sub, level + 1))}
+          </div>
+        )}
       </div>
     );
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -286,49 +340,82 @@ export default function Agents() {
         </Badge>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search agents by name or location..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+      {/* Two-panel Layout */}
+      <div className="flex gap-6 min-h-[600px]">
+        {/* Left Panel - Category Tree */}
+        <div className="w-72 shrink-0 border rounded-lg bg-card">
+          <div className="p-4 border-b">
+            <h2 className="text-sm font-semibold text-foreground mb-3">Categories</h2>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search categories..."
+                value={categorySearch}
+                onChange={(e) => setCategorySearch(e.target.value)}
+                className="pl-9 h-9 text-sm"
+              />
+            </div>
+          </div>
+          <ScrollArea className="h-[500px]">
+            <div className="p-3 space-y-1">
+              {filteredCategories.map((category) => renderCategoryItem(category))}
+            </div>
+          </ScrollArea>
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <Filter className="w-4 h-4 mr-2" />
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="maintenance">Maintenance</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
-      {/* Category Tree with Agents */}
-      <div className="space-y-2 border rounded-lg p-4 bg-card">
-        <h2 className="text-lg font-semibold mb-4 text-foreground">Agent Categories</h2>
-        <div className="space-y-1">
-          {categoryStructure.map((category) => renderCategorySection(category))}
+        {/* Right Panel - Agents */}
+        <div className="flex-1 border rounded-lg bg-card">
+          <div className="p-4 border-b flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search agents by name or location..."
+                value={agentSearch}
+                onChange={(e) => setAgentSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-44">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="maintenance">Maintenance</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <ScrollArea className="h-[500px]">
+            <div className="p-4">
+              {filteredAgents.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {filteredAgents.map((agent) => (
+                    <AgentCard
+                      key={agent.id}
+                      agent={agent}
+                      onViewDetails={handleViewDetails}
+                      onManageAgent={handleManageAgent}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-lg text-muted-foreground">
+                    No agents match your current filters
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Try adjusting your search or filter criteria
+                  </p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
         </div>
       </div>
-
-      {filteredAgents.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-lg text-muted-foreground">
-            No agents match your current filters
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Try adjusting your search or filter criteria
-          </p>
-        </div>
-      )}
     </div>
   );
 }
