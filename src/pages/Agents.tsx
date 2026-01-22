@@ -287,9 +287,9 @@ export default function Agents() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-full space-y-4">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between shrink-0">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Radio SW Agents
@@ -305,7 +305,7 @@ export default function Agents() {
       </div>
 
       {/* Status Summary */}
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-4 shrink-0">
         <Badge
           className={`px-4 py-2 text-sm cursor-pointer transition-all hover:scale-105 ${
             statusFilter === "active"
@@ -340,11 +340,11 @@ export default function Agents() {
         </Badge>
       </div>
 
-      {/* Two-panel Layout */}
-      <div className="flex gap-6 min-h-[600px]">
+      {/* Two-panel Layout - fills remaining space */}
+      <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
         {/* Left Panel - Category Tree */}
-        <div className="w-72 shrink-0 border rounded-lg bg-card">
-          <div className="p-4 border-b">
+        <div className="w-full lg:w-72 shrink-0 border rounded-lg bg-card flex flex-col max-h-64 lg:max-h-none">
+          <div className="p-4 border-b shrink-0">
             <h2 className="text-sm font-semibold text-foreground mb-3">Categories</h2>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -356,7 +356,7 @@ export default function Agents() {
               />
             </div>
           </div>
-          <ScrollArea className="h-[500px]">
+          <ScrollArea className="flex-1">
             <div className="p-3 space-y-1">
               {filteredCategories.map((category) => renderCategoryItem(category))}
             </div>
@@ -364,8 +364,8 @@ export default function Agents() {
         </div>
 
         {/* Right Panel - Agents */}
-        <div className="flex-1 border rounded-lg bg-card">
-          <div className="p-4 border-b flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 border rounded-lg bg-card flex flex-col min-h-0">
+          <div className="p-4 border-b flex flex-col sm:flex-row gap-4 shrink-0">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -389,10 +389,10 @@ export default function Agents() {
             </Select>
           </div>
 
-          <ScrollArea className="h-[500px]">
+          <ScrollArea className="flex-1">
             <div className="p-4">
               {filteredAgents.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {filteredAgents.map((agent) => (
                     <AgentCard
                       key={agent.id}
