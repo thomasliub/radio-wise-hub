@@ -1,6 +1,12 @@
-import { Server, BookOpen, Cpu, Settings, Activity, Search, Home } from "lucide-react";
+import { Server, BookOpen, Settings, Activity, Search, Home } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
+import mcpLogo from "@/assets/mcp-logo.svg";
+
+const McpIcon = ({ className }: { className?: string }) => (
+  <img src={mcpLogo} alt="MCP" className={className} />
+);
+
 const navigationItems = [{
   title: "Dashboard",
   url: "/",
@@ -16,7 +22,7 @@ const navigationItems = [{
 }, {
   title: "MCP Server",
   url: "/mcp-server",
-  icon: Cpu
+  icon: McpIcon
 }, {
   title: "Monitoring",
   url: "/monitoring",
