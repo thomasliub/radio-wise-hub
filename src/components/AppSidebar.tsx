@@ -1,4 +1,4 @@
-import { Server, BookOpen, Database, Settings, Activity, Search, Home } from "lucide-react";
+import { Server, BookOpen, Cpu, Settings, Activity, Search, Home } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 const navigationItems = [{
@@ -14,9 +14,9 @@ const navigationItems = [{
   url: "/knowledge",
   icon: BookOpen
 }, {
-  title: "Agent Data",
-  url: "/data",
-  icon: Database
+  title: "MCP Server",
+  url: "/mcp-server",
+  icon: Cpu
 }, {
   title: "Monitoring",
   url: "/monitoring",

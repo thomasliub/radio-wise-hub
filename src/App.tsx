@@ -12,7 +12,7 @@ import AgentConfig from "./pages/AgentConfig";
 import KnowledgeDetail from "./pages/KnowledgeDetail";
 
 import KnowledgeConfig from "./pages/KnowledgeConfig";
-import ViewAgentData from "./pages/ViewAgentData";
+import McpServer from "./pages/McpServer";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,8 +33,7 @@ const App = () => (
             <Route path="/knowledge/:id" element={<KnowledgeDetail />} />
             <Route path="/knowledge/config" element={<KnowledgeConfig />} />
             <Route path="/knowledge/:id/config" element={<KnowledgeConfig />} />
-            <Route path="/view-agent-data" element={<ViewAgentData />} />
-            <Route path="/data" element={<div className="p-8 text-center text-muted-foreground">Agent Data view coming soon</div>} />
+            <Route path="/mcp-server" element={<McpServer />} />
             <Route path="/monitoring" element={<div className="p-8 text-center text-muted-foreground">Monitoring view coming soon</div>} />
             <Route path="/settings" element={<div className="p-8 text-center text-muted-foreground">Settings view coming soon</div>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
