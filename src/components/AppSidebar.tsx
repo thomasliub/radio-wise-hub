@@ -4,7 +4,7 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGrou
 import mcpLogo from "@/assets/mcp-logo.svg";
 
 const McpIcon = ({ className }: { className?: string }) => (
-  <img src={mcpLogo} alt="MCP" className={className} />
+  <img src={mcpLogo} alt="MCP" className={`${className} invert`} />
 );
 
 const navigationItems = [{
