@@ -3,35 +3,42 @@ import { NavLink, useLocation } from "react-router-dom";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import mcpLogo from "@/assets/mcp-logo.svg";
 
-const McpIcon = ({ className }: { className?: string }) => (
-  <img src={mcpLogo} alt="MCP" className={`${className} invert`} />
+const McpIcon = ({ className, isActive }: { className?: string; isActive?: boolean }) => (
+  <img src={mcpLogo} alt="MCP" className={`${className} ${isActive ? '' : 'invert'}`} />
 );
 
 const navigationItems = [{
   title: "Dashboard",
   url: "/",
-  icon: Home
+  icon: Home,
+  isMcp: false
 }, {
   title: "Radio SW Agents",
   url: "/agents",
-  icon: Server
+  icon: Server,
+  isMcp: false
 }, {
   title: "Knowledge Base",
   url: "/knowledge",
-  icon: BookOpen
+  icon: BookOpen,
+  isMcp: false
 }, {
   title: "MCP Server",
   url: "/mcp-server",
-  icon: McpIcon
+  icon: McpIcon,
+  isMcp: true
 }, {
   title: "Monitoring",
   url: "/monitoring",
-  icon: Activity
+  icon: Activity,
+  isMcp: false
 }, {
   title: "Settings",
   url: "/settings",
-  icon: Settings
+  icon: Settings,
+  isMcp: false
 }];
+
 export function AppSidebar() {
   const {
     state
@@ -39,11 +46,18 @@ export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const isCollapsed = state === "collapsed";
+  
   const getNavCls = ({
     isActive
   }: {
     isActive: boolean;
   }) => isActive ? "bg-primary text-primary-foreground font-medium shadow-sm hover:bg-primary hover:text-primary-foreground" : "hover:bg-secondary/60 text-muted-foreground hover:text-foreground";
+  
+  const isRouteActive = (url: string) => {
+    if (url === "/") return currentPath === "/";
+    return currentPath.startsWith(url);
+  };
+  
   return <Sidebar className={isCollapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarContent className="border-r bg-slate-600 rounded-none">
         <div className="p-4 border-b">
@@ -62,14 +76,23 @@ export function AppSidebar() {
           <SidebarGroupLabel className={isCollapsed ? "hidden" : ""}></SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationItems.map(item => <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="h-10">
-                    <NavLink to={item.url} end className={getNavCls}>
-                      <item.icon className="w-4 h-4 flex-shrink-0" />
-                      {!isCollapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>)}
+              {navigationItems.map(item => {
+                const isActive = isRouteActive(item.url);
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild className="h-10">
+                      <NavLink to={item.url} end className={getNavCls}>
+                        {item.isMcp ? (
+                          <item.icon className="w-4 h-4 flex-shrink-0" isActive={isActive} />
+                        ) : (
+                          <item.icon className="w-4 h-4 flex-shrink-0" />
+                        )}
+                        {!isCollapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
